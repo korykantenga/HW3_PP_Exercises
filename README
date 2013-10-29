@@ -1,0 +1,9 @@
+This repository holds functions relevant to spectral estimation of RBC policy functions and perturbation in Dynare.
+
+The following function are modifications or supplied entirely by Jesus Fernandez-Villaverde (University of Pennsylvania, October 2013):
+cheby_approx.m
+chebyshev.m
+col_points.m
+nonlinear2.m (modification of nonlinear.m)
+
+The rest were created by Kory Kantenga (University of Pennsylvania, 27 October 2013) in fullfillment of Homework 3 for Computation Economics.
