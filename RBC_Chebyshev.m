@@ -63,9 +63,9 @@ vTime = zeros(2,1);
 
 %Direct
 nTime = tic;
-theta0 = [0.2 0.0 0.0 0.0 0.0 0.0 0.0 0.0];
+theta0 = [0.3333 0.0 0.0 0.0 0.0 0.0 0.0 0.0];
 k = col_points(klow,khigh,8);
-resid = @(x) nonlinear2(x,k,vProductivity(1),vProductivity,...
+resid = @(x) nonlinear2(x,k,vProductivity(2),vProductivity,...
     mTransition,klow,khigh);
 [thetaD,fvalD] = fsolve(resid,theta0,options);
 fprintf('Directly estimating with a guess\n');
@@ -77,7 +77,7 @@ fprintf('\n');
 
 %Iterative Method
 nTime = tic;
-thetaI = 0.2; %initialisation
+thetaI = 0.3333; %initialisation
 for iOrder = 2:9
 k = col_points(klow,khigh,iOrder);
 resid = @(x) nonlinear2(x,k,vProductivity(2),vProductivity,...
@@ -94,21 +94,89 @@ fprintf('The time comparison is...');
 display(vTime)
 fprintf('\n');
 
+% Entire labor function
+theta0 = [0.3333 0.0 0.0 0.0 0.0 0.0 0.0 0.0];
+k = col_points(klow,khigh,8);
+[theta1,fval1] = fsolve(@(x) ...
+    nonlinear2(x,k,vProductivity(1),vProductivity,...
+    mTransition,klow,khigh),theta0,options);
+[theta2,fval2] = fsolve(@(x) ...
+    nonlinear2(x,k,vProductivity(2),vProductivity,...
+    mTransition,klow,khigh),theta0,options);
+[theta3,fval3] = fsolve(@(x) ...
+    nonlinear2(x,k,vProductivity(3),vProductivity,...
+    mTransition,klow,khigh),theta0,options);
+
+
 %% 4. Plots
+
+kgrid = klow:0.1:khigh;
 
 figure;
 thetaD = real(thetaD);
 yD = cheby_approx(klow:0.1:khigh,thetaD,klow,khigh);
-kgrid = klow:0.1:khigh;
-plot(kgrid,yD,'--')
+
+plot(kgrid,yD,'-o')
 hold on
 thetaI = real(thetaI);
 yI = cheby_approx(klow:0.1:khigh,thetaI,klow,khigh);
-kgrid = klow:0.1:khigh;
 plot(kgrid,yI,'-r')
-title('Labor Function for z=1','FontSize', 16)
+title('Labor Function for z=0','FontSize', 16)
 xlabel('Capital Stock','FontSize', 12)
 ylabel('Labor (Hours)','FontSize',12)
+xlim([klow khigh])
+legend('Direct Guess','Iterative Guess','Location','Best')
 print -depsc2 HW3_LaborFunc_z1.eps
+
+figure;
+theta1 = real(theta1);
+y1 = cheby_approx(klow:0.1:khigh,theta1,klow,khigh);
+plot(kgrid,y1)
+hold on;
+theta2 = real(theta2);
+y2 = cheby_approx(klow:0.1:khigh,theta2,klow,khigh);
+plot(kgrid,y2,'-r')
+hold on;
+theta3 = real(theta3);
+y3 = cheby_approx(klow:0.1:khigh,theta3,klow,khigh);
+plot(kgrid,y3,'-g')
+hold on;
+title('Labor Policy Function','FontSize', 16)
+xlabel('Capital Stock','FontSize', 12)
+ylabel('Labor (Hours)','FontSize',12)
+xlim([klow khigh])
+legend('z=-0.04','z=0','z=0.04','Location','Best')
+print -depsc2 HW3_LaborFunc.eps
+
+
+%% 5. Recover and Plot Consumption and Capital Policy Functions
+laborPolicy = [y1;y2;y3]';
+
+consumptionPolicy = zeros(length(kgrid),length(vProductivity));
+capitalPolicy = zeros(length(kgrid),length(vProductivity));
+for i=1:length(kgrid)
+    for j=1:length(vProductivity)
+        consumptionPolicy(i,j)=consumption(kgrid(i),...
+            vProductivity(j),laborPolicy(i,j));
+        capitalPolicy(i,j)=capitalNext(kgrid(i),...
+            vProductivity(j),laborPolicy(i,j));
+    end
+end
+figure;
+plot(kgrid,consumptionPolicy)
+title('Consumption Policy Function','FontSize', 16)
+xlabel('Capital Stock','FontSize', 12)
+ylabel('Consumption Units','FontSize',12)
+xlim([klow khigh])
+legend('z=-0.04','z=0','z=0.04','Location','Best')
+print -depsc2 HW3_ConsFunc.eps
+figure;
+plot(kgrid,capitalPolicy)
+title('Capital Policy Function','FontSize', 16)
+xlabel('Capital Stock','FontSize', 12)
+ylabel('Capital','FontSize',12)
+xlim([klow khigh])
+legend('z=-0.04','z=0','z=0.04','Location','Best')
+print -depsc2 HW3_CapitalFunc.eps
 
 toc
